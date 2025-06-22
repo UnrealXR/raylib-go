@@ -21,10 +21,19 @@
 *           Reconfigure standard input to receive key inputs, works with SSH connection.
 *           WARNING: Reconfiguring standard input could lead to undesired effects, like breaking other
 *           running processes orblocking the device if not restored properly. Use with care.
+*       #define ENABLE_WAYLAND_DRM_LEASING
+*           Instead of acquiring DRM exclusively, this leases a DRM instance from the currently running
+*           Wayland compositor. This requires the screen to have the non-desktop property, which is set
+*           through EDIDs. X11 is not supported, but it may be in the future.
+*           See:
+*           https://learn.microsoft.com/en-us/windows-hardware/drivers/display/specialized-monitors-edid-extension
 *
 *   DEPENDENCIES:
 *       - DRM and GLM: System libraries for display initialization and configuration
 *       - gestures: Gestures system for touch-ready devices (or simulated from mouse inputs)
+*       - wayland-client: Needed for DRM leasing. Only used if ENABLE_WAYLAND_DRM_LEASING is set.
+*       - drm-lease-v1: Generated Wayland code for the DRM leasing extension. Only used if
+*                       ENABLE_WAYLAND_DRM_LEASING is set.
 *
 *
 *   LICENSE: zlib/libpng
@@ -70,6 +79,13 @@
 
 #include "EGL/egl.h"        // Native platform windowing system interface
 #include "EGL/eglext.h"     // EGL extensions
+
+#if defined(ENABLE_WAYLAND_DRM_LEASING)
+    #include "wayland-client.h" // Wayland client. Used to do DRM leasing.
+    // DRM leasing protocol that's used
+    #include "drm-lease-v1.c"
+    #include "drm-lease-v1.h"
+#endif
 
 #ifndef EGL_OPENGL_ES3_BIT
     #define EGL_OPENGL_ES3_BIT  0x40
@@ -128,6 +144,10 @@ typedef struct {
     int gamepadAbsAxisRange[MAX_GAMEPADS][MAX_GAMEPAD_AXES][2]; // [0] = min, [1] = range value of the axes
     int gamepadAbsAxisMap[MAX_GAMEPADS][ABS_CNT]; // Maps the axes gamepads from the evdev api to a sequential one
     int gamepadCount;                   // The number of gamepads registered
+
+    #if defined(ENABLE_WAYLAND_DRM_LEASING)
+        bool usingDRMLeasing; // True if we are using DRM leasing
+    #endif
 } PlatformData;
 
 //----------------------------------------------------------------------------------
@@ -717,10 +737,200 @@ void PollInputEvents(void)
 // Module Internal Functions Definition
 //----------------------------------------------------------------------------------
 
+#if defined(ENABLE_WAYLAND_DRM_LEASING)
+    // Wayland state for DRM leasing
+    struct wayland_state {
+        struct wp_drm_lease_device_v1 *lease_device;
+        struct wp_drm_lease_connector_v1 *lease_connector;
+    };
+
+    // Called when we get a potential DRM lease
+    void lease_handler(void *data, struct wp_drm_lease_v1 *wp_drm_lease_v1, int32_t leased_fd)
+    {
+        int *fd = data;
+        *fd = leased_fd;
+    }
+
+    void lease_remove_handler(void *data, struct wp_drm_lease_v1 *wp_drm_lease_v1)
+    {
+        // Do nothing
+    }
+
+    static const struct wp_drm_lease_v1_listener lease_listener = {
+        .lease_fd = lease_handler,
+        .finished = lease_remove_handler,
+    };
+
+    // Called when we get a potential DRM lease
+    static void lease_device_fd_handler(void *data, struct wp_drm_lease_device_v1 *lease_device, int fd)
+    {
+        close(fd);
+    }
+
+    // Called when we get a lease connector
+    static void lease_device_connector_handler(void *data, struct wp_drm_lease_device_v1 *lease_device, struct wp_drm_lease_connector_v1 *conn)
+    {
+        struct wayland_state *state = data;
+
+        if (!state->lease_connector) {
+            state->lease_connector = conn;
+        }
+    }
+
+    static void lease_device_on_done(void *data, struct wp_drm_lease_device_v1 *lease_device)
+    {
+        // Do nothing
+    }
+
+    static void lease_device_on_release(void *data, struct wp_drm_lease_device_v1 *lease_device)
+    {
+        // Do nothing
+    }
+
+    static const struct wp_drm_lease_device_v1_listener lease_manager_listener = {
+        .drm_fd = lease_device_fd_handler,
+        .connector = lease_device_connector_handler,
+        .done = lease_device_on_done,
+        .released = lease_device_on_release,
+    };
+
+    // Listen for protocol list/dump
+    static void registry_handler(void *data, struct wl_registry *registry, uint32_t name, const char *interface, uint32_t version)
+    {
+        struct wayland_state *state = data;
+
+        if (strcmp(interface, "wp_drm_lease_device_v1") == 0) {
+            state->lease_device = wl_registry_bind(registry, name, &wp_drm_lease_device_v1_interface, version);
+            wp_drm_lease_device_v1_add_listener(state->lease_device, &lease_manager_listener, state);
+        }
+    }
+
+    // Listen for remove event
+    static void registry_remove_handler(void *data, struct wl_registry *registry, uint32_t name)
+    {
+        // Do nothing
+    }
+
+    static const struct wl_registry_listener registry_listener = {
+        .global = registry_handler,
+        .global_remove = registry_remove_handler,
+    };
+
+    // Get the DRM device's file descriptor via DRM leasing. Seperate function due to readability concerns
+    int GetDRMFDViaWaylandLeasing(void)
+    {
+        int fd = -1;
+
+        // Connect to the potentially running Wayland instance
+        struct wayland_state state = { 0 };
+        struct wl_display *display = wl_display_connect(NULL);
+
+        if (!display)
+        {
+            TRACELOG(LOG_WARNING, "DISPLAY: Failed to connect to Wayland server for DRM leasing! Is Wayland running? Cannot do DRM leasing");
+            return -1;
+        }
+
+        // Check the Wayland registry to determine if the DRM leasing protocol (wp_drm_lease_device_v1) is supported. If so, get the lease device and connector.
+        struct wl_registry *registry = wl_display_get_registry(display);
+        wl_registry_add_listener(registry, &registry_listener, &state);
+        wl_display_dispatch(display);
+        wl_display_roundtrip(display);
+
+        if (!state.lease_device) {
+            TRACELOG(LOG_WARNING, "DISPLAY: Failed to acquire leasing device");
+            return -1;
+        }
+
+        if (!state.lease_connector) {
+            TRACELOG(LOG_WARNING, "DISPLAY: No connectors offered for lease");
+            return -1;
+        }
+
+        struct wp_drm_lease_request_v1 *req = wp_drm_lease_device_v1_create_lease_request(state.lease_device);
+        wp_drm_lease_request_v1_request_connector(req, state.lease_connector);
+
+        struct wp_drm_lease_v1 *lease = wp_drm_lease_request_v1_submit(req);
+        wp_drm_lease_v1_add_listener(lease, &lease_listener, &fd);
+        wl_display_dispatch(display);
+        wl_display_roundtrip(display);
+
+        if (fd < 0) {
+            TRACELOG(LOG_WARNING, "DISPLAY: DRM file descriptor is not set. Cannot use DRM leased value");
+            return -1;
+        }
+
+        return fd;
+    }
+#endif
+
+// Get the DRM device's file descriptor
+int GetDRMFD(void)
+{
+    int fd;
+
+    #if defined(ENABLE_WAYLAND_DRM_LEASING)
+        TRACELOG(LOG_INFO, "DISPLAY: Attempting Wayland DRM leasing");
+        fd = GetDRMFDViaWaylandLeasing();
+
+        if (fd != -1)
+        {
+            TRACELOG(LOG_INFO, "DISPLAY: Leased DRM device opened successfully");
+            platform.usingDRMLeasing = true;
+            return fd;
+        }
+    #endif
+
+    #if defined(DEFAULT_GRAPHIC_DEVICE_DRM)
+        fd = open(DEFAULT_GRAPHIC_DEVICE_DRM, O_RDWR);
+
+        if (fd != -1)
+        {
+            TRACELOG(LOG_INFO, "DISPLAY: Default graphic device DRM opened successfully");
+            return fd;
+        }
+    #else
+        TRACELOG(LOG_WARNING, "DISPLAY: No graphic card set, trying platform-gpu-card");
+        fd = open("/dev/dri/by-path/platform-gpu-card",  O_RDWR); // VideoCore VI (Raspberry Pi 4)
+
+        if (fd != -1)
+        {
+            TRACELOG(LOG_INFO, "DISPLAY: platform-gpu-card opened successfully");
+            return fd;
+        }
+
+        if (drmModeGetResources(fd) == NULL)
+        {
+            TRACELOG(LOG_WARNING, "DISPLAY: Failed to open platform-gpu-card, trying card1");
+            fd = open("/dev/dri/card1", O_RDWR); // Other Embedded
+
+            if (fd != -1)
+            {
+                TRACELOG(LOG_INFO, "DISPLAY: card1 opened successfully");
+                return fd;
+            }
+        }
+
+        if (drmModeGetResources(fd) == NULL)
+        {
+            TRACELOG(LOG_WARNING, "DISPLAY: Failed to open graphic card1, trying card0");
+            fd = open("/dev/dri/card0", O_RDWR); // VideoCore IV (Raspberry Pi 1-3)
+
+            if (fd != -1)
+            {
+                TRACELOG(LOG_INFO, "DISPLAY: card0 opened successfully");
+                return fd;
+            }
+        }
+    #endif
+
+    return fd;
+}
+
 // Initialize platform: graphics, inputs and more
 int InitPlatform(void)
 {
-    platform.fd = -1;
+    platform.fd = GetDRMFD();
     platform.connector = NULL;
     platform.modeIndex = -1;
     platform.crtc = NULL;
@@ -733,29 +943,6 @@ int InitPlatform(void)
     //----------------------------------------------------------------------------
     CORE.Window.fullscreen = true;
     CORE.Window.flags |= FLAG_FULLSCREEN_MODE;
-
-#if defined(DEFAULT_GRAPHIC_DEVICE_DRM)
-    platform.fd = open(DEFAULT_GRAPHIC_DEVICE_DRM, O_RDWR);
-    if (platform.fd != -1) TRACELOG(LOG_INFO, "DISPLAY: Default graphic device DRM opened successfully");
-#else
-    TRACELOG(LOG_WARNING, "DISPLAY: No graphic card set, trying platform-gpu-card");
-    platform.fd = open("/dev/dri/by-path/platform-gpu-card",  O_RDWR); // VideoCore VI (Raspberry Pi 4)
-    if (platform.fd != -1) TRACELOG(LOG_INFO, "DISPLAY: platform-gpu-card opened successfully");
-
-    if ((platform.fd == -1) || (drmModeGetResources(platform.fd) == NULL))
-    {
-        TRACELOG(LOG_WARNING, "DISPLAY: Failed to open platform-gpu-card, trying card1");
-        platform.fd = open("/dev/dri/card1", O_RDWR); // Other Embedded
-        if (platform.fd != -1) TRACELOG(LOG_INFO, "DISPLAY: card1 opened successfully");
-    }
-
-    if ((platform.fd == -1) || (drmModeGetResources(platform.fd) == NULL))
-    {
-        TRACELOG(LOG_WARNING, "DISPLAY: Failed to open graphic card1, trying card0");
-        platform.fd = open("/dev/dri/card0", O_RDWR); // VideoCore IV (Raspberry Pi 1-3)
-        if (platform.fd != -1) TRACELOG(LOG_INFO, "DISPLAY: card0 opened successfully");
-    }
-#endif
 
     if (platform.fd == -1)
     {
@@ -781,17 +968,48 @@ int InitPlatform(void)
 
         // In certain cases the status of the conneciton is reported as UKNOWN, but it is still connected.
         // This might be a hardware or software limitation like on Raspberry Pi Zero with composite output.
-        if (((con->connection == DRM_MODE_CONNECTED) || (con->connection == DRM_MODE_UNKNOWNCONNECTION)) && (con->encoder_id))
-        {
-            TRACELOG(LOG_TRACE, "DISPLAY: DRM mode connected");
-            platform.connector = con;
-            break;
-        }
-        else
-        {
-            TRACELOG(LOG_TRACE, "DISPLAY: DRM mode NOT connected (deleting)");
-            drmModeFreeConnector(con);
-        }
+        #if defined(ENABLE_WAYLAND_DRM_LEASING)
+            if (platform.usingDRMLeasing)
+            {
+                if (((con->connection == DRM_MODE_CONNECTED) || (con->connection == DRM_MODE_UNKNOWNCONNECTION)))
+                {
+                    TRACELOG(LOG_TRACE, "DISPLAY: DRM mode connected");
+                    platform.connector = con;
+                    break;
+                }
+                else
+                {
+                    TRACELOG(LOG_TRACE, "DISPLAY: DRM mode NOT connected (deleting)");
+                    drmModeFreeConnector(con);
+                }
+            }
+            else
+            {
+                if (((con->connection == DRM_MODE_CONNECTED) || (con->connection == DRM_MODE_UNKNOWNCONNECTION)) && (con->encoder_id))
+                {
+                    TRACELOG(LOG_TRACE, "DISPLAY: DRM mode connected");
+                    platform.connector = con;
+                    break;
+                }
+                else
+                {
+                    TRACELOG(LOG_TRACE, "DISPLAY: DRM mode NOT connected (deleting)");
+                    drmModeFreeConnector(con);
+                }
+            }
+        #else
+            if (((con->connection == DRM_MODE_CONNECTED) || (con->connection == DRM_MODE_UNKNOWNCONNECTION)) && (con->encoder_id))
+            {
+                TRACELOG(LOG_TRACE, "DISPLAY: DRM mode connected");
+                platform.connector = con;
+                break;
+            }
+            else
+            {
+                TRACELOG(LOG_TRACE, "DISPLAY: DRM mode NOT connected (deleting)");
+                drmModeFreeConnector(con);
+            }
+        #endif
     }
 
     if (!platform.connector)
@@ -801,22 +1019,83 @@ int InitPlatform(void)
         return -1;
     }
 
-    drmModeEncoder *enc = drmModeGetEncoder(platform.fd, platform.connector->encoder_id);
-    if (!enc)
-    {
-        TRACELOG(LOG_WARNING, "DISPLAY: Failed to get DRM mode encoder");
-        drmModeFreeResources(res);
-        return -1;
-    }
+    #if defined(ENABLE_WAYLAND_DRM_LEASING)
+        drmModeEncoder *enc = NULL;
 
-    platform.crtc = drmModeGetCrtc(platform.fd, enc->crtc_id);
-    if (!platform.crtc)
-    {
-        TRACELOG(LOG_WARNING, "DISPLAY: Failed to get DRM mode crtc");
-        drmModeFreeEncoder(enc);
-        drmModeFreeResources(res);
-        return -1;
-    }
+        if (platform.usingDRMLeasing)
+        {
+            drmModeResPtr drm_resources = drmModeGetResources(platform.fd);
+
+            if (!drm_resources)
+            {
+                TRACELOG(LOG_WARNING, "DISPLAY: Failed to get DRM resources");
+                drmModeFreeResources(res);
+                return -1;
+            }
+
+            if (res->count_crtcs == 0)
+            {
+                TRACELOG(LOG_WARNING, "DISPLAY: No CRTCs found for display");
+            }
+
+            for (size_t i = 0; i < res->count_crtcs; ++i)
+            {
+                platform.crtc = drmModeGetCrtc(platform.fd, res->crtcs[i]);
+
+                if (!platform.crtc)
+                {
+                    TRACELOG(LOG_WARNING, "DISPLAY: Failed to get DRM mode crtc");
+                    drmModeFreeResources(drm_resources);
+                    drmModeFreeResources(res);
+                    return -1;
+                }
+            }
+
+            if (!platform.crtc)
+            {
+                TRACELOG(LOG_WARNING, "DISPLAY: Failed to get DRM mode crtc");
+                drmModeFreeResources(drm_resources);
+                drmModeFreeResources(res);
+                return -1;
+            }
+        }
+        else
+        {
+            enc = drmModeGetEncoder(platform.fd, platform.connector->encoder_id);
+            if (!enc)
+            {
+                TRACELOG(LOG_WARNING, "DISPLAY: Failed to get DRM mode encoder");
+                drmModeFreeResources(res);
+                return -1;
+            }
+
+            platform.crtc = drmModeGetCrtc(platform.fd, enc->crtc_id);
+            if (!platform.crtc)
+            {
+                TRACELOG(LOG_WARNING, "DISPLAY: Failed to get DRM mode crtc");
+                drmModeFreeEncoder(enc);
+                drmModeFreeResources(res);
+                return -1;
+            }
+        }
+    #else
+        drmModeEncoder *enc = drmModeGetEncoder(platform.fd, platform.connector->encoder_id);
+        if (!enc)
+        {
+            TRACELOG(LOG_WARNING, "DISPLAY: Failed to get DRM mode encoder");
+            drmModeFreeResources(res);
+            return -1;
+        }
+
+        platform.crtc = drmModeGetCrtc(platform.fd, enc->crtc_id);
+        if (!platform.crtc)
+        {
+            TRACELOG(LOG_WARNING, "DISPLAY: Failed to get DRM mode crtc");
+            drmModeFreeEncoder(enc);
+            drmModeFreeResources(res);
+            return -1;
+        }
+    #endif
 
     // If InitWindow should use the current mode find it in the connector's mode list
     if ((CORE.Window.screen.width <= 0) || (CORE.Window.screen.height <= 0))
@@ -828,7 +1107,11 @@ int InitPlatform(void)
         if (platform.modeIndex < 0)
         {
             TRACELOG(LOG_WARNING, "DISPLAY: No matching DRM connector mode found");
-            drmModeFreeEncoder(enc);
+            #if defined(ENABLE_WAYLAND_DRM_LEASING)
+                if (!platform.usingDRMLeasing) drmModeFreeEncoder(enc);
+            #else
+                drmModeFreeEncoder(enc);
+            #endif
             drmModeFreeResources(res);
             return -1;
         }
@@ -856,7 +1139,11 @@ int InitPlatform(void)
     if (platform.modeIndex < 0)
     {
         TRACELOG(LOG_WARNING, "DISPLAY: Failed to find a suitable DRM connector mode");
-        drmModeFreeEncoder(enc);
+        #if defined(ENABLE_WAYLAND_DRM_LEASING)
+            if (!platform.usingDRMLeasing) drmModeFreeEncoder(enc);
+        #else
+            drmModeFreeEncoder(enc);
+        #endif
         drmModeFreeResources(res);
         return -1;
     }
@@ -873,8 +1160,16 @@ int InitPlatform(void)
     CORE.Window.render.width = CORE.Window.screen.width;
     CORE.Window.render.height = CORE.Window.screen.height;
 
-    drmModeFreeEncoder(enc);
-    enc = NULL;
+    #if defined(ENABLE_WAYLAND_DRM_LEASING)
+        if (!platform.usingDRMLeasing)
+        {
+            drmModeFreeEncoder(enc);
+            enc = NULL;
+        }
+    #else
+        drmModeFreeEncoder(enc);
+        enc = NULL;
+    #endif
 
     drmModeFreeResources(res);
     res = NULL;
@@ -903,17 +1198,18 @@ int InitPlatform(void)
         TRACELOG(LOG_INFO, "DISPLAY: Trying to enable MSAA x4");
     }
 
-    const EGLint framebufferAttribs[] = {
-        EGL_RENDERABLE_TYPE, (rlGetVersion() == RL_OPENGL_ES_30)? EGL_OPENGL_ES3_BIT : EGL_OPENGL_ES2_BIT, // Type of context support
-        EGL_SURFACE_TYPE, EGL_WINDOW_BIT, // Don't use it on Android!
+    const EGLint framebufferAttribs[] =
+    {
+        EGL_RENDERABLE_TYPE, (rlGetVersion() == RL_OPENGL_ES_30)? EGL_OPENGL_ES3_BIT : EGL_OPENGL_ES2_BIT,      // Type of context support
+        EGL_SURFACE_TYPE, EGL_WINDOW_BIT,          // Don't use it on Android!
         EGL_RED_SIZE, 8,            // RED color bit depth (alternative: 5)
         EGL_GREEN_SIZE, 8,          // GREEN color bit depth (alternative: 6)
         EGL_BLUE_SIZE, 8,           // BLUE color bit depth (alternative: 5)
         EGL_ALPHA_SIZE, 8,        // ALPHA bit depth (required for transparent framebuffer)
         //EGL_TRANSPARENT_TYPE, EGL_NONE, // Request transparent framebuffer (EGL_TRANSPARENT_RGB does not work on RPI)
-        EGL_DEPTH_SIZE, 24,         // Depth buffer size (Required to use Depth testing!)
+        EGL_DEPTH_SIZE, 16,         // Depth buffer size (Required to use Depth testing!)
         //EGL_STENCIL_SIZE, 8,      // Stencil buffer size
-        EGL_SAMPLE_BUFFERS, sampleBuffer, // Activate MSAA
+        EGL_SAMPLE_BUFFERS, sampleBuffer,    // Activate MSAA
         EGL_SAMPLES, samples,       // 4x Antialiasing if activated (Free on MALI GPUs)
         EGL_NONE
     };
@@ -1343,46 +1639,52 @@ static void ProcessKeyboard(void)
 // this means mouse, keyboard or gamepad devices
 static void InitEvdevInput(void)
 {
-    char path[MAX_FILEPATH_LENGTH] = { 0 };
-    DIR *directory = NULL;
-    struct dirent *entity = NULL;
+    #if !defined(DISABLE_EVDEV_INPUT)
+        char path[MAX_FILEPATH_LENGTH] = { 0 };
+        DIR *directory = NULL;
+        struct dirent *entity = NULL;
 
-    // Initialise keyboard file descriptor
-    platform.keyboardFd = -1;
-    platform.mouseFd = -1;
+        // Initialise keyboard file descriptor
+        platform.keyboardFd = -1;
+        platform.mouseFd = -1;
 
-    // Reset variables
-    for (int i = 0; i < MAX_TOUCH_POINTS; ++i)
-    {
-        CORE.Input.Touch.position[i].x = -1;
-        CORE.Input.Touch.position[i].y = -1;
-    }
-
-    // Reset keyboard key state
-    for (int i = 0; i < MAX_KEYBOARD_KEYS; i++)
-    {
-        CORE.Input.Keyboard.currentKeyState[i] = 0;
-        CORE.Input.Keyboard.keyRepeatInFrame[i] = 0;
-    }
-
-    // Open the linux directory of "/dev/input"
-    directory = opendir(DEFAULT_EVDEV_PATH);
-
-    if (directory)
-    {
-        while ((entity = readdir(directory)) != NULL)
+        // Reset variables
+        for (int i = 0; i < MAX_TOUCH_POINTS; ++i)
         {
-            if ((strncmp("event", entity->d_name, strlen("event")) == 0) ||     // Search for devices named "event*"
-                (strncmp("mouse", entity->d_name, strlen("mouse")) == 0))       // Search for devices named "mouse*"
-            {
-                snprintf(path, MAX_FILEPATH_LENGTH, "%s%s", DEFAULT_EVDEV_PATH, entity->d_name);
-                ConfigureEvdevDevice(path);                                     // Configure the device if appropriate
-            }
+            CORE.Input.Touch.position[i].x = -1;
+            CORE.Input.Touch.position[i].y = -1;
         }
 
-        closedir(directory);
-    }
-    else TRACELOG(LOG_WARNING, "INPUT: Failed to open linux event directory: %s", DEFAULT_EVDEV_PATH);
+        // Reset keyboard key state
+        for (int i = 0; i < MAX_KEYBOARD_KEYS; i++)
+        {
+            CORE.Input.Keyboard.currentKeyState[i] = 0;
+            CORE.Input.Keyboard.keyRepeatInFrame[i] = 0;
+        }
+
+        // Open the linux directory of "/dev/input"
+        directory = opendir(DEFAULT_EVDEV_PATH);
+
+        if (directory)
+        {
+            while ((entity = readdir(directory)) != NULL)
+            {
+                if ((strncmp("event", entity->d_name, strlen("event")) == 0) ||     // Search for devices named "event*"
+                    (strncmp("mouse", entity->d_name, strlen("mouse")) == 0))       // Search for devices named "mouse*"
+                {
+                    sprintf(path, "%s%s", DEFAULT_EVDEV_PATH, entity->d_name);
+                    ConfigureEvdevDevice(path);                                     // Configure the device if appropriate
+                }
+            }
+
+            closedir(directory);
+        }
+        else TRACELOG(LOG_WARNING, "INPUT: Failed to open linux event directory: %s", DEFAULT_EVDEV_PATH);
+    #else
+        TRACELOG(LOG_INFO, "INPUT: Not doing evdev input configuration as it's disabled");
+        platform.keyboardFd = -1;
+        platform.mouseFd = -1;
+    #endif
 }
 
 // Identifies a input device and configures it for use if appropriate
