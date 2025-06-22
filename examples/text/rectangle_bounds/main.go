@@ -18,7 +18,7 @@ import (
 	"unicode/utf8"
 	"unsafe"
 
-	rl "github.com/gen2brain/raylib-go/raylib"
+	rl "git.terah.dev/UnrealXR/raylib-go/raylib"
 )
 
 const (
@@ -33,7 +33,7 @@ func main() {
 	rl.InitWindow(screenWidth, screenHeight, "raylib [text] example - draw text inside a rectangle")
 
 	text := `Text cannot escape	this container	...word wrap also works when active so here's a long text for testing.
-		
+
 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Nec ullamcorper sit amet risus nullam eget felis eget.`
 
 	resizing, wordWrap := false, true

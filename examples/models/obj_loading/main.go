@@ -5,7 +5,7 @@ import (
 	"slices"
 	"unsafe"
 
-	"github.com/gen2brain/raylib-go/raylib"
+	"git.terah.dev/UnrealXR/raylib-go/raylib"
 )
 
 var supportedFileTypes = []string{

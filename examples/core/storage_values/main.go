@@ -17,7 +17,7 @@ import (
 	"fmt"
 	"os"
 
-	rl "github.com/gen2brain/raylib-go/raylib"
+	rl "git.terah.dev/UnrealXR/raylib-go/raylib"
 )
 
 const (

@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 
-	gui "github.com/gen2brain/raylib-go/raygui"
-	rl "github.com/gen2brain/raylib-go/raylib"
+	gui "git.terah.dev/UnrealXR/raylib-go/raygui"
+	rl "git.terah.dev/UnrealXR/raylib-go/raylib"
 )
 
 func main() {

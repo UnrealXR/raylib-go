@@ -1,6 +1,6 @@
 package main
 
-import rl "github.com/gen2brain/raylib-go/raylib"
+import rl "git.terah.dev/UnrealXR/raylib-go/raylib"
 
 const (
 	screenWidth     = 800

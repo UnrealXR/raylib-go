@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	rl "github.com/gen2brain/raylib-go/raylib"
+
+	rl "git.terah.dev/UnrealXR/raylib-go/raylib"
 )
 
 // Game settings
@@ -59,7 +60,6 @@ func CheckCollisionSide(ball Ball, paddle Paddle) string {
 
 	return "none"
 }
-
 
 // Initialize the game state
 func (g *Game) Init() {
@@ -126,7 +126,6 @@ func (g *Game) Update() {
 		// Reposition ball outside paddle2
 		g.ball.Pos.X = g.paddle2.Pos.X - g.ball.Radius
 	}
-
 
 	// Scoring
 	if g.ball.Pos.X < 0 {

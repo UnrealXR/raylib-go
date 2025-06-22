@@ -1,8 +1,8 @@
 package main
 
 import (
-	ez "github.com/gen2brain/raylib-go/easings"
-	rl "github.com/gen2brain/raylib-go/raylib"
+	ez "git.terah.dev/UnrealXR/raylib-go/easings"
+	rl "git.terah.dev/UnrealXR/raylib-go/raylib"
 )
 
 var (

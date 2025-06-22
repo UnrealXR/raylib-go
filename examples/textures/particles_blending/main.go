@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/gen2brain/raylib-go/raylib"
+	"git.terah.dev/UnrealXR/raylib-go/raylib"
 )
 
 const (

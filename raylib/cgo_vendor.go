@@ -4,9 +4,9 @@
 package rl
 
 import (
-	_ "github.com/gen2brain/raylib-go/raylib/external"
-	_ "github.com/gen2brain/raylib-go/raylib/external/android/native_app_glue"
-	_ "github.com/gen2brain/raylib-go/raylib/external/glfw/include/GLFW"
-	_ "github.com/gen2brain/raylib-go/raylib/external/glfw/src"
-	_ "github.com/gen2brain/raylib-go/raylib/platforms"
+	_ "git.terah.dev/UnrealXR/raylib-go/raylib/external"
+	_ "git.terah.dev/UnrealXR/raylib-go/raylib/external/android/native_app_glue"
+	_ "git.terah.dev/UnrealXR/raylib-go/raylib/external/glfw/include/GLFW"
+	_ "git.terah.dev/UnrealXR/raylib-go/raylib/external/glfw/src"
+	_ "git.terah.dev/UnrealXR/raylib-go/raylib/platforms"
 )

@@ -1,4 +1,4 @@
-## physics [![GoDoc](https://godoc.org/github.com/gen2brain/raylib-go/physics?status.svg)](https://godoc.org/github.com/gen2brain/raylib-go/physics)
+## physics [![GoDoc](https://godoc.org/git.terah.dev/UnrealXR/raylib-go/physics?status.svg)](https://godoc.org/git.terah.dev/UnrealXR/raylib-go/physics)
 
 2D Physics library for videogames.
 

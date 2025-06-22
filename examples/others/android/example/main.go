@@ -4,7 +4,7 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/gen2brain/raylib-go/raylib"
+	"git.terah.dev/UnrealXR/raylib-go/raylib"
 )
 
 // Game states

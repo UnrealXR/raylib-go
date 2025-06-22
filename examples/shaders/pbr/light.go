@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
-	rl "github.com/gen2brain/raylib-go/raylib"
 	"unsafe"
+
+	rl "git.terah.dev/UnrealXR/raylib-go/raylib"
 )
 
 type LightType int32
@@ -198,7 +199,7 @@ func (lt *Light) UpdateReflect(cameraPos rl.Vector3) {
 }
 
 func (lt *Light) configShader() {
-		lt.Shader = rl.LoadShader("pbr.vs","./pbr.fs")
+	lt.Shader = rl.LoadShader("pbr.vs", "./pbr.fs")
 }
 
 // exce before init or set manually
