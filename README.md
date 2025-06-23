@@ -3,9 +3,11 @@
 [![Build Status](https://git.terah.dev/UnrealXR/raylib-go/actions/workflows/build.yml/badge.svg)](https://git.terah.dev/UnrealXR/raylib-go/actions)
 [![GoDoc](https://godoc.org/git.terah.dev/UnrealXR/raylib-go/raylib?status.svg)](https://godoc.org/git.terah.dev/UnrealXR/raylib-go/raylib)
 [![Go Report Card](https://goreportcard.com/badge/git.terah.dev/UnrealXR/raylib-go/raylib)](https://goreportcard.com/report/git.terah.dev/UnrealXR/raylib-go/raylib)
-[![Examples](https://img.shields.io/badge/learn%20by-examples-0077b3.svg?style=flat-square)](https://git.terah.dev/UnrealXR/raylib-go/tree/master/examples)
+[![Examples](https://img.shields.io/badge/learn%20by-examples-0077b3.svg?style=flat-square)](https://git.terah.dev/UnrealXR/raylib-go/src/branch/master/examples)
 
 Golang bindings for [raylib](http://www.raylib.com/), a simple and easy-to-use library to enjoy videogames programming.
+
+This is a fork of [gen2brain's `raylib-go` bindings](https://github.com/gen2brain/raylib-go) to add [DRM leasing](https://wayland.app/protocols/drm-lease-v1) support.
 
 raylib C source code is included and compiled together with bindings. Note that the first build can take a few minutes.
 
@@ -57,6 +59,8 @@ For web bindings, refer to [Raylib-Go-Wasm](https://github.com/BrownNPC/Raylib-G
 ### Build tags
 
 * `drm` - build for Linux native [DRM](https://en.wikipedia.org/wiki/Direct_Rendering_Manager) mode, including Raspberry Pi 4 and other devices (PLATFORM_DRM)
+* `drm_disable_input` - disables keyboard input capabilities for the DRM backend. Requires the `drm` build tag as a prerequisite
+* `drm_leasing` - enables Wayland DRM leasing capabilties. Requires the `drm` build tag as a prerequisite
 * `sdl` - build for [SDL](https://github.com/libsdl-org/SDL) backend (PLATFORM_DESKTOP_SDL)
 * `sdl3` - build for [SDL3](https://github.com/libsdl-org/SDL) backend (PLATFORM_DESKTOP_SDL3)
 * `rgfw` - build for [RGFW](https://github.com/ColleagueRiley/RGFW) backend (PLATFORM_DESKTOP_RGFW)
