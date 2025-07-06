@@ -4,7 +4,7 @@ import (
 	"math/rand"
 	"time"
 
-	rl "git.terah.dev/UnrealXR/raylib-go/raylib"
+	rl "git.lunr.sh/UnrealXR/raylib-go/raylib"
 )
 
 const (

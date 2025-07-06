@@ -1,9 +1,9 @@
-![logo](https://git.terah.dev/UnrealXR/raylib-go/raw/branch/master/assets/raylib-go_256x256.png)
+![logo](https://git.lunr.sh/UnrealXR/raylib-go/raw/branch/master/assets/raylib-go_256x256.png)
 ## raylib-go
-[![Build Status](https://git.terah.dev/UnrealXR/raylib-go/actions/workflows/build.yml/badge.svg)](https://git.terah.dev/UnrealXR/raylib-go/actions)
-[![GoDoc](https://godoc.org/git.terah.dev/UnrealXR/raylib-go/raylib?status.svg)](https://godoc.org/git.terah.dev/UnrealXR/raylib-go/raylib)
-[![Go Report Card](https://goreportcard.com/badge/git.terah.dev/UnrealXR/raylib-go/raylib)](https://goreportcard.com/report/git.terah.dev/UnrealXR/raylib-go/raylib)
-[![Examples](https://img.shields.io/badge/learn%20by-examples-0077b3.svg?style=flat-square)](https://git.terah.dev/UnrealXR/raylib-go/src/branch/master/examples)
+[![Build Status](https://git.lunr.sh/UnrealXR/raylib-go/actions/workflows/build.yml/badge.svg)](https://git.lunr.sh/UnrealXR/raylib-go/actions)
+[![GoDoc](https://godoc.org/git.lunr.sh/UnrealXR/raylib-go/raylib?status.svg)](https://godoc.org/git.lunr.sh/UnrealXR/raylib-go/raylib)
+[![Go Report Card](https://goreportcard.com/badge/git.lunr.sh/UnrealXR/raylib-go/raylib)](https://goreportcard.com/report/git.lunr.sh/UnrealXR/raylib-go/raylib)
+[![Examples](https://img.shields.io/badge/learn%20by-examples-0077b3.svg?style=flat-square)](https://git.lunr.sh/UnrealXR/raylib-go/src/branch/master/examples)
 
 Golang bindings for [raylib](http://www.raylib.com/), a simple and easy-to-use library to enjoy videogames programming.
 
@@ -45,7 +45,7 @@ It is also possible to build the DLL yourself. You can find more info at [raylib
 
 ##### Android
 
-[Android example](https://git.terah.dev/UnrealXR/raylib-go/tree/master/examples/others/android/example).
+[Android example](https://git.lunr.sh/UnrealXR/raylib-go/tree/master/examples/others/android/example).
 
 ##### Wasm
 
@@ -54,7 +54,7 @@ For web bindings, refer to [Raylib-Go-Wasm](https://github.com/BrownNPC/Raylib-G
 
 ### Installation
 
-    go get -v -u git.terah.dev/UnrealXR/raylib-go/raylib
+    go get -v -u git.lunr.sh/UnrealXR/raylib-go/raylib
 
 ### Build tags
 
@@ -75,14 +75,14 @@ For web bindings, refer to [Raylib-Go-Wasm](https://github.com/BrownNPC/Raylib-G
 
 ### Documentation
 
-Documentation on [GoDoc](https://godoc.org/git.terah.dev/UnrealXR/raylib-go/raylib). Also check raylib [cheatsheet](http://www.raylib.com/cheatsheet/cheatsheet.html). If you have problems or need assistance there is an active community in the #raylib-go channel of the [Raylib Discord Server](https://discord.gg/raylib) that can help.
+Documentation on [GoDoc](https://godoc.org/git.lunr.sh/UnrealXR/raylib-go/raylib). Also check raylib [cheatsheet](http://www.raylib.com/cheatsheet/cheatsheet.html). If you have problems or need assistance there is an active community in the #raylib-go channel of the [Raylib Discord Server](https://discord.gg/raylib) that can help.
 
 ### Example
 
 ```go
 package main
 
-import rl "git.terah.dev/UnrealXR/raylib-go/raylib"
+import rl "git.lunr.sh/UnrealXR/raylib-go/raylib"
 
 func main() {
 	rl.InitWindow(800, 450, "raylib [core] example - basic window")
@@ -101,7 +101,7 @@ func main() {
 }
 ```
 
-Check more [examples](https://git.terah.dev/UnrealXR/raylib-go/tree/master/examples) organized by raylib modules.
+Check more [examples](https://git.lunr.sh/UnrealXR/raylib-go/tree/master/examples) organized by raylib modules.
 
 ### Cross-compile (Linux)
 
@@ -131,4 +131,4 @@ basic_window: Mach-O 64-bit arm64 executable, flags:<NOUNDEFS|DYLDLINK|TWOLEVEL|
 
 ### License
 
-raylib-go is licensed under an unmodified zlib/libpng license. View [LICENSE](https://git.terah.dev/UnrealXR/raylib-go/blob/master/LICENSE).
+raylib-go is licensed under an unmodified zlib/libpng license. View [LICENSE](https://git.lunr.sh/UnrealXR/raylib-go/blob/master/LICENSE).

@@ -19,7 +19,7 @@ import (
 	"math"
 	"unsafe"
 
-	rl "git.terah.dev/UnrealXR/raylib-go/raylib"
+	rl "git.lunr.sh/UnrealXR/raylib-go/raylib"
 )
 
 const (
@@ -122,7 +122,7 @@ func main() {
 		cursorColor := rl.White
 
 		// Get ray and test against objects
-		// See issue : https://git.terah.dev/UnrealXR/raylib-go/issues/457
+		// See issue : https://git.lunr.sh/UnrealXR/raylib-go/issues/457
 		//ray = rl.GetScreenToWorldRay(rl.GetMousePosition(), camera)
 		ray = rl.GetMouseRay(rl.GetMousePosition(), camera)
 

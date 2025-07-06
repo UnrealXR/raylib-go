@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"git.terah.dev/UnrealXR/raylib-go/raylib"
+	"git.lunr.sh/UnrealXR/raylib-go/raylib"
 )
 
 const (

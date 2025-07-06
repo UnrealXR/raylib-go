@@ -2,19 +2,19 @@ module examples
 
 go 1.21
 
-replace git.terah.dev/UnrealXR/raylib-go/raylib => ../raylib
+replace git.lunr.sh/UnrealXR/raylib-go/raylib => ../raylib
 
-replace git.terah.dev/UnrealXR/raylib-go/raygui => ../raygui
+replace git.lunr.sh/UnrealXR/raylib-go/raygui => ../raygui
 
-replace git.terah.dev/UnrealXR/raylib-go/easings => ../easings
+replace git.lunr.sh/UnrealXR/raylib-go/easings => ../easings
 
-replace git.terah.dev/UnrealXR/raylib-go/physics => ../physics
+replace git.lunr.sh/UnrealXR/raylib-go/physics => ../physics
 
 require (
-	git.terah.dev/UnrealXR/raylib-go/easings v0.0.0-00010101000000-000000000000
-	git.terah.dev/UnrealXR/raylib-go/physics v0.0.0-00010101000000-000000000000
-	git.terah.dev/UnrealXR/raylib-go/raygui v0.0.0-00010101000000-000000000000
-	git.terah.dev/UnrealXR/raylib-go/raylib v0.0.0-20241202103652-5d50abe7c65b
+	git.lunr.sh/UnrealXR/raylib-go/easings v0.0.0-00010101000000-000000000000
+	git.lunr.sh/UnrealXR/raylib-go/physics v0.0.0-00010101000000-000000000000
+	git.lunr.sh/UnrealXR/raylib-go/raygui v0.0.0-00010101000000-000000000000
+	git.lunr.sh/UnrealXR/raylib-go/raylib v0.0.0-20241202103652-5d50abe7c65b
 	github.com/jakecoffman/cp v1.2.1
 	github.com/neguse/go-box2d-lite v0.0.0-20170921151050-5d8ed9b7272b
 )

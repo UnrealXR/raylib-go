@@ -34,7 +34,7 @@ import (
 	"unicode/utf8"
 	"unsafe"
 
-	rl "git.terah.dev/UnrealXR/raylib-go/raylib"
+	rl "git.lunr.sh/UnrealXR/raylib-go/raylib"
 )
 
 // Globals
@@ -188,7 +188,7 @@ func main() {
 
 		// Handle clicking the cube
 		if rl.IsMouseButtonPressed(rl.MouseButtonLeft) {
-			// TODO : Missing function, see issue https://git.terah.dev/UnrealXR/raylib-go/issues/457
+			// TODO : Missing function, see issue https://git.lunr.sh/UnrealXR/raylib-go/issues/457
 			//ray := rl.GetScreenToWorldRay(rl.GetMousePosition(), camera)
 			ray := rl.GetMouseRay(rl.GetMousePosition(), camera)
 

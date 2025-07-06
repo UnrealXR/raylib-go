@@ -1,4 +1,4 @@
-module git.terah.dev/UnrealXR/raylib-go/raylib
+module git.lunr.sh/UnrealXR/raylib-go/raylib
 
 go 1.21
 

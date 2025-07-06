@@ -12,7 +12,7 @@
 ********************************************************************************************/
 package main
 
-import rl "git.terah.dev/UnrealXR/raylib-go/raylib"
+import rl "git.lunr.sh/UnrealXR/raylib-go/raylib"
 
 const (
 	screenWidth  = 800

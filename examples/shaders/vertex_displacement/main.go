@@ -22,7 +22,7 @@ import (
 	"os"
 	"path/filepath"
 
-	rl "git.terah.dev/UnrealXR/raylib-go/raylib"
+	rl "git.lunr.sh/UnrealXR/raylib-go/raylib"
 )
 
 // NOTE: Usage: `PLATFORM_DESKTOP=1 go run .`

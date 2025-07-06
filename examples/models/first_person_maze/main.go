@@ -2,8 +2,8 @@
 *
 *   raylib [models] example - first person maze
 *
-*   This example has been created using raylib-go v0.0.0-20220104071325-2f072dc2d259 (https://git.terah.dev/UnrealXR/raylib-go)
-*   raylib-go is licensed under an unmodified zlib/libpng license (https://git.terah.dev/UnrealXR/raylib-go/blob/master/LICENSE)
+*   This example has been created using raylib-go v0.0.0-20220104071325-2f072dc2d259 (https://git.lunr.sh/UnrealXR/raylib-go)
+*   raylib-go is licensed under an unmodified zlib/libpng license (https://git.lunr.sh/UnrealXR/raylib-go/blob/master/LICENSE)
 *
 *   Original C version for Raylib 2.5 Copyright (c) 2019 Ramon Santamaria (@raysan5)
 *   Converted to Go by Michael Redman January 4, 2022
@@ -13,7 +13,7 @@
 package main
 
 import (
-	rl "git.terah.dev/UnrealXR/raylib-go/raylib"
+	rl "git.lunr.sh/UnrealXR/raylib-go/raylib"
 )
 
 func main() {

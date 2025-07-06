@@ -1,8 +1,8 @@
 package main
 
 import (
-	"git.terah.dev/UnrealXR/raylib-go/physics"
-	"git.terah.dev/UnrealXR/raylib-go/raylib"
+	"git.lunr.sh/UnrealXR/raylib-go/physics"
+	"git.lunr.sh/UnrealXR/raylib-go/raylib"
 )
 
 const (

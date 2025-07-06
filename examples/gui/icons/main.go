@@ -1,8 +1,8 @@
 package main
 
 import (
-	"git.terah.dev/UnrealXR/raylib-go/raygui"
-	rl "git.terah.dev/UnrealXR/raylib-go/raylib"
+	"git.lunr.sh/UnrealXR/raylib-go/raygui"
+	rl "git.lunr.sh/UnrealXR/raylib-go/raylib"
 )
 
 func main() {

@@ -1,8 +1,8 @@
-module git.terah.dev/UnrealXR/raylib-go/physics
+module git.lunr.sh/UnrealXR/raylib-go/physics
 
 go 1.21
 
-require git.terah.dev/UnrealXR/raylib-go/raylib v0.0.0-20241202103652-5d50abe7c65b
+require git.lunr.sh/UnrealXR/raylib-go/raylib v0.0.0-20241202103652-5d50abe7c65b
 
 require (
 	github.com/ebitengine/purego v0.8.1 // indirect

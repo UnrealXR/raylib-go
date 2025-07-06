@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 
-	gui "git.terah.dev/UnrealXR/raylib-go/raygui"
-	rl "git.terah.dev/UnrealXR/raylib-go/raylib"
+	gui "git.lunr.sh/UnrealXR/raylib-go/raygui"
+	rl "git.lunr.sh/UnrealXR/raylib-go/raylib"
 )
 
 /*******************************************************************************************

@@ -1,3 +1,3 @@
-module git.terah.dev/UnrealXR/raylib-go/easings
+module git.lunr.sh/UnrealXR/raylib-go/easings
 
 go 1.21

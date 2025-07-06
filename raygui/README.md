@@ -1,4 +1,4 @@
-## raygui [![GoDoc](https://godoc.org/git.terah.dev/UnrealXR/raylib-go/raygui?status.svg)](https://godoc.org/git.terah.dev/UnrealXR/raylib-go/raygui)
+## raygui [![GoDoc](https://godoc.org/git.lunr.sh/UnrealXR/raylib-go/raygui?status.svg)](https://godoc.org/git.lunr.sh/UnrealXR/raylib-go/raygui)
 
 raygui is simple and easy-to-use IMGUI (immediate mode GUI API) library.
 

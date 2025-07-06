@@ -3,9 +3,9 @@ package main
 import (
 	"strings"
 
-	"git.terah.dev/UnrealXR/raylib-go/easings"
-	"git.terah.dev/UnrealXR/raylib-go/raygui"
-	rl "git.terah.dev/UnrealXR/raylib-go/raylib"
+	"git.lunr.sh/UnrealXR/raylib-go/easings"
+	"git.lunr.sh/UnrealXR/raylib-go/raygui"
+	rl "git.lunr.sh/UnrealXR/raylib-go/raylib"
 )
 
 func main() {
